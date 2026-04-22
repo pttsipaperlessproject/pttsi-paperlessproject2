@@ -156,14 +156,14 @@
                 </button>
                 
                 <!-- NEW REPORT MENU LINK -->
-                <button onclick="checkAuth(() => openLink('https://pttsipaperlessproject2-report.netlify.app/'))" class="group bg-amber-600 text-white font-bold py-10 px-6 rounded-2xl shadow-xl hover:bg-amber-500 transition-all duration-300 flex flex-col items-center justify-center space-y-4 border-b-8 border-amber-800 active:scale-95">
+                <button onclick="checkAuth(() => openLink('https://pttsipaperlessproject2-report.netlify.app/', false))" class="group bg-amber-600 text-white font-bold py-10 px-6 rounded-2xl shadow-xl hover:bg-amber-500 transition-all duration-300 flex flex-col items-center justify-center space-y-4 border-b-8 border-amber-800 active:scale-95">
                     <i data-lucide="bar-chart-3" class="w-12 h-12 group-hover:scale-110 transition-transform"></i>
                     <span class="text-xl tracking-wide uppercase">Menu Laporan</span>
                 </button>
             </div>
 
             <!-- NEW WORKSHOP MONITOR LINK -->
-            <button onclick="openLink('https://pttsipaperlessproject2-workshop.netlify.app/')" class="w-full group bg-slate-800 text-white font-bold p-6 rounded-2xl shadow-lg hover:bg-slate-700 transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-4 active:scale-95 text-center sm:text-left">
+            <button onclick="openLink('https://pttsipaperlessproject2-workshop.netlify.app/', false)" class="w-full group bg-slate-800 text-white font-bold p-6 rounded-2xl shadow-lg hover:bg-slate-700 transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-4 active:scale-95 text-center sm:text-left">
                 <div class="bg-slate-700 text-amber-400 p-3 rounded-xl group-hover:scale-110 transition-transform border border-slate-600">
                     <i data-lucide="monitor" class="w-8 h-8"></i>
                 </div>
@@ -204,7 +204,7 @@
 
         <!-- AUTH MODAL -->
         <div id="authModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-            <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-6 border-t-8 border-amber-600 fade-in">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl max-sm w-full text-center space-y-6 border-t-8 border-amber-600 fade-in">
                 <div class="mx-auto w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center">
                     <i data-lucide="lock" class="w-8 h-8 text-amber-600"></i>
                 </div>
@@ -221,6 +221,26 @@
                 <div class="flex gap-3">
                     <button onclick="closeAuth()" class="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 transition">Batal</button>
                     <button onclick="confirmAuth()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 shadow-lg shadow-blue-200 transition">Authorize</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- THANK YOU / NEXT FORM MODAL -->
+        <div id="thanksModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-6 border-t-8 border-emerald-600 fade-in">
+                <div class="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-8 h-8 text-emerald-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 uppercase tracking-tight">Terima Kasih!</h3>
+                    <p class="text-slate-500 text-sm mt-1">Data formulir Anda telah dikirim ke tab baru.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-slate-700 font-semibold text-sm">Apakah Anda ingin mengisi formulir digital lainnya?</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeWindow()" class="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 transition">Tutup Tab</button>
+                    <button onclick="closeThanks()" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition">Ya, Lanjut</button>
                 </div>
             </div>
         </div>
@@ -322,8 +342,9 @@
                     btn.innerHTML = `<i data-lucide="arrow-right-circle" class="w-4 h-4 text-amber-500 shrink-0"></i> <span>${item.name}</span>`;
                     btn.onclick = (e) => {
                         e.stopPropagation();
-                        if (group.restricted) checkAuth(() => openLink(item.link));
-                        else openLink(item.link);
+                        // GForms are always treated as "external/form" and open in new tab
+                        if (group.restricted) checkAuth(() => openLink(item.link, true));
+                        else openLink(item.link, true);
                     };
                     sub.appendChild(btn);
                 });
@@ -341,14 +362,49 @@
             lucide.createIcons();
         }
 
-        // Updated to use current tab
-        function openLink(link) {
+        /**
+         * opens a link.
+         * @param {string} link - The URL to open.
+         * @param {boolean} isForm - If true, opens in new tab and shows thank you modal.
+         */
+        function openLink(link, isForm = false) {
             if (!link || link === '#') {
                 showToast("Data sedang disinkronisasi.");
                 return;
             }
-            // Menggunakan window.location.href agar beralih di tab yang sama
-            window.location.href = link;
+
+            if (isForm) {
+                // Open in NEW tab
+                window.open(link, '_blank');
+                // Show the "Thank you / Next?" modal
+                showThanks();
+            } else {
+                // Open in CURRENT tab (for Reports/Monitor)
+                window.location.href = link;
+            }
+        }
+
+        function showThanks() {
+            const modal = document.getElementById('thanksModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeThanks() {
+            const modal = document.getElementById('thanksModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function closeWindow() {
+            // Note: browser policy usually prevents closing a window that wasn't opened by script,
+            // but in many mobile environments this will just act as a way to back out or prompt.
+            // As a fallback, we redirect to home if window.close is blocked.
+            window.close();
+            setTimeout(() => {
+                closeThanks();
+                showHome();
+            }, 500);
         }
 
         function showToast(message) {
