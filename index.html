@@ -341,12 +341,14 @@
             lucide.createIcons();
         }
 
+        // Updated to use current tab
         function openLink(link) {
             if (!link || link === '#') {
                 showToast("Data sedang disinkronisasi.");
                 return;
             }
-            window.open(link, '_blank');
+            // Menggunakan window.location.href agar beralih di tab yang sama
+            window.location.href = link;
         }
 
         function showToast(message) {
